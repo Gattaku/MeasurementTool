@@ -74,6 +74,71 @@
     window.onresize = fitCanvasSize;
     //**************************************************************************************** */
   
+
+    //************対象の画像をキャンバス上にセッティングする **************************/
+    //ドラッグ’ドロップのコード
+    const dragOverHandler = {
+        handleEvent: (event) => {
+          judge_img=0; //再貼り付けする際にカウンターを０に戻すための再定義
+          event.dataTransfer.dropEffect = 'copy';
+          event.preventDefault();
+        }
+      };  $can.addEventListener('dragover', dragOverHandler, arg1);        
+    
+      const dropHandler =(event)=> {
+        files = event.dataTransfer.files;
+        if (files.length === 1) {
+          file = files[0];
+          reader = new FileReader();
+          reader.addEventListener('load', loadReaderHandler, arg1);
+          reader.readAsDataURL(file);
+        }
+        event.preventDefault();    
+      };  $can.addEventListener('drop',(arg1)=>{dropHandler(event);});
+
+    const drawCanvasHandler = {
+        handleEvent: (event) => {
+          if (judgeImg ===0){
+            img0 = event.target;
+            $ctx.drawImage(img0, 0, 0);
+            $ctx.save();
+            judgeImg=1; //命令の最後にジャッジカウントを１にして、再貼り付け可能にしておく
+          } else if (judgeImg ===1){
+            $ctx.drawImage(img0, 0, 0);
+            $ctx.save();
+          };   
+          $canLabel[0].style.display = 'none'   
+        }
+    };
+
+    const loadReaderHandler = {
+        handleEvent: (event) => {
+          if (judgeImg === 0){
+            img1 = new Image();
+            img1.addEventListener('load', drawCanvasHandler, arg1);
+            img1EventTarget = img1.src = event.target.result;
+          } else if (judgeImg === 1){
+            img1.addEventListener('load', drawCanvasHandler,arg1);
+            img1.src = img1EventTarget;
+          };     
+        }
+    };
+
+    //*********************コピペで画像を貼り付けるコード *******************
+    document.onpaste = function(pasteEvent) {
+        judgeImg=0; //再貼り付けする際にカウンターを０に戻すための再定義
+        item = pasteEvent.clipboardData.items[0];
+        if (item.type.indexOf("image") === 0)
+        {
+        file = item.getAsFile();
+        reader = new FileReader();
+        reader.addEventListener('load', loadReaderHandler, arg1);
+        reader.readAsDataURL(file);
+        }
+    }
+    //*******************************************************************
+    //********************************************************************************** */
+
   
 
 
