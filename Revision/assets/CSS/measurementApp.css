@@ -17,9 +17,7 @@
     justify-content: space-evenly;
 
 }
-.hContent{
 
-}
 .hContent.axis{
     text-align: center;
     margin: 5px;
@@ -54,14 +52,6 @@
     
 }
 
-
-.popUpText{
-    
-
-}
-.selectDirect{
-
-}
 .buttonSetting{
     margin-top: 10px;
 }
