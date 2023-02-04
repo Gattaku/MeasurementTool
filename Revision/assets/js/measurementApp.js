@@ -60,14 +60,14 @@
     // let measure_data_label_cnt = 0;
     //********************************** */
     //*****Canvasサイズを全体にするための定数 */
-    const canvas_width = document.documentElement.clientWidth - 38;
-    const canvas_height = document.documentElement.clientHeight - 10;
+    const canvasWidth = document.documentElement.clientWidth - 38;
+    const canvasHeight = document.documentElement.clientHeight - 10;
     //************************************************************ */
     //**********************canvasのサイズをwindowサイズに合わせる関数******************************
     function fitCanvasSize() {
       // Canvas のサイズをクライアントサイズに合わせる
-      $can.width = canvas_width;
-      $can.height = canvas_height;
+      $can.width = canvasWidth;
+      $can.height = canvasHeight;
     
     }  
     fitCanvasSize();
