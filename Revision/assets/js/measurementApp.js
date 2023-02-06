@@ -23,6 +23,8 @@ let positionInfo = []; //文字列として各測定点を格納する ("xStart 
 
 //*初期設定、測定トリガー用******************
 const ACTIVATE_='is-active';
+let measureTrriger = 0;
+let measureDataLabelCnt = 0;
 // let measure_trriger = 0;
 // let init_setting = 0;
 // let init_click_index = 0;
@@ -33,7 +35,7 @@ const ACTIVATE_='is-active';
 //*************************** */
 //測定結果格納用//
 const $measure = document.getElementsByClassName('MeasureLabel');
-const $measureLen = $measure.length;
+// const $measureLen = $measure.length;
 //*******************↑↑↑↑↑ */
 //画像の情報を保管しておく変数↓↓↓↓↓
 let judgeImg =0; // 0->まだ画像登録なし。1->すでに画像登録あり。
@@ -49,6 +51,7 @@ let img1EventTarget = null;
 const ballRadius = 4;
 let measureLineColor = "#ff0000"; //測定線のカラーを選択
 let measurePointCircle = "#ff0000"; //測定点のカラーを選択
+let lineWidth = 3; //線の太さ
 //*******************************↑↑↑↑↑ */
 //***測定結果を書くための変数/定数 */
 let targetVal = 100;
@@ -77,6 +80,10 @@ window.onresize = fitCanvasSize;
 //②コピペで貼り付ける関数
 //③キャンバス上をクリックした時の座標（x,y）を取得する関数
 //④取得した座標をもとにキャンバス上に線と〇をうつ関数
+//⑤測定データのラベルを作る関数
+//⑥キャンセルボタンを作る
+//⑦ポップアップdelete
+//⑧測定結果を動かすための関数
 
 //************対象の画像をキャンバス上にセッティングする **************************/
 //ドラッグ’ドロップのコード
@@ -168,23 +175,41 @@ const canDraw = window.onload = (arrayData) => {
         if (clickCnt % 2 !==0){
           lineNum += -1;
         }
-        for (let index = 0 ;index < lineNum ; index++){
-          const tempPosition = arrayData[index].trim().split(" ")
-          $ctx.beginPath () ;
-          $ctx.moveTo( parseInt(tempPosition[0])-ballRadius/2, parseInt(tempPosition[1])-ballRadius/2) ;
-          $ctx.lineTo( parseInt(tempPosition[2]-ballRadius/2), parseInt(tempPosition[3])-ballRadius/2) ;
-          $ctx.strokeStyle = measureLineColor ;
-          $ctx.lineWidth = 3 ;
-          $ctx.stroke();
-        }
-        for (let index = 0; index < lineNum ; index++) {
-          const tempPosition = arrayData[index].trim().split(" ")
-          $ctx.beginPath();
-          $ctx.arc(parseInt(tempPosition[0])-ballRadius/2, parseInt(tempPosition[1])-ballRadius/2, ballRadius, 0, Math.PI*2);
-          $ctx.arc(parseInt(tempPosition[2])-ballRadius/2, parseInt(tempPosition[3])-ballRadius/2, ballRadius, 0, Math.PI*2);
-          $ctx.fillStyle = measurePointCircle;
-          $ctx.fill();
-          $ctx.closePath();
+        for (let index = 0 ;index < lineNum ; index++){ //上から「①線を引く②開始点/終了点に点を設定③測定ラベルまでの直線を表現」
+          if (arrayData[index] ==="") { //もしも情報が空なら何も操作をしない
+            //何もしない
+          } else {
+            const tempPosition = arrayData[index].trim().split(" ")
+            $ctx.beginPath () ;
+            $ctx.moveTo( parseInt(tempPosition[0])-ballRadius/2, parseInt(tempPosition[1])-ballRadius/2) ;
+            $ctx.lineTo( parseInt(tempPosition[2]-ballRadius/2), parseInt(tempPosition[3])-ballRadius/2) ;
+            $ctx.strokeStyle = measureLineColor ;
+            $ctx.lineWidth = lineWidth ;
+            $ctx.stroke();
+            
+            $ctx.beginPath () ;
+            $ctx.moveTo( (parseInt(tempPosition[0])+parseInt(tempPosition[2]))/2, (parseInt(tempPosition[1])+parseInt(tempPosition[3]))/2 ) ;
+            switch (tempPosition.length){
+              case 4:
+                $ctx.lineTo( (parseInt(tempPosition[0])+parseInt(tempPosition[2]))/2-30, (parseInt(tempPosition[1])+parseInt(tempPosition[3]))/2-60 ) ;
+                break;
+              case 6:
+                $ctx.lineTo( parseInt(tempPosition[4]), (parseInt(tempPosition[5]))) ;
+                break;
+                default:
+                  break;
+            }
+            $ctx.strokeStyle = measureLineColor ;
+            $ctx.lineWidth = Math.floor(lineWidth/5)+1 ;
+            $ctx.stroke() ;
+            
+            $ctx.beginPath();
+            $ctx.arc(parseInt(tempPosition[0])-ballRadius/2, parseInt(tempPosition[1])-ballRadius/2, ballRadius, 0, Math.PI*2);
+            $ctx.arc(parseInt(tempPosition[2])-ballRadius/2, parseInt(tempPosition[3])-ballRadius/2, ballRadius, 0, Math.PI*2);
+            $ctx.fillStyle = measurePointCircle;
+            $ctx.fill();
+            $ctx.closePath();
+          }
         }
         if (clickCnt % 2 !== 0) { //もしも奇数回の場合は、開始点の情報だけ存在するため、その点を打つ
           const tempPosition = arrayData[lineNum].trim().split(" ")
@@ -194,12 +219,87 @@ const canDraw = window.onload = (arrayData) => {
           $ctx.fill();
           $ctx.closePath();
         }
+        // }
       }
       break;
   }
 }
 
+//⑤測定データのラベルを作る関数
+/* @param {str} その回のxStart, yStart, xEnd ,yEndをとってくる
+   @return なし。測定ラベルを作る
+ */
+const measureDataSet = (str)=>{
+  const tempInfo = str.trim().split(" ");
+  const x = parseInt(tempInfo[2])-parseInt(tempInfo[0]);
+  const y = parseInt(tempInfo[3])-parseInt(tempInfo[1]);
+  const L = ((x**2+y**2)**(1/2)).toFixed(2);
+  $measure[measurementCnt].style.display = 'block';
+  $measure[measurementCnt].style.left = ((parseInt(tempInfo[2])+parseInt(tempInfo[0]))/2-30)+'px';
+  $measure[measurementCnt].style.top =((parseInt(tempInfo[3])+parseInt(tempInfo[1]))/2-60)+'px';
+  $measure[measurementCnt].innerText = 'x='+x.toFixed(2)+
+                                        '\nY='+y.toFixed(2)+
+                                        '\n直線='+L
+  measureCancelLabelMake();
+  //MeasureTrriger初期化と測定開始ボタンのis-activeを消す。
+  $MeasureTrriger[0].classList.remove(ACTIVATE_);
+  popUpdeleat();
+  measureTrriger =0;
+  measurementCnt++;
+  measureDataLabelCnt++;
+};
 
+//⑥キャンセルボタンを作る
+const measureCancelLabelMake = () => {
+  let newCancelLabel = $measure[measureDataLabelCnt];
+  let newCancelElement = document.createElement('button');
+  console.log('キャンセルボタンを生成しました');
+  newCancelElement.className = 'cancelTrriger';
+  newCancelElement.textContent = '×';
+  newCancelElement.dataset.cancelTrriger = measureDataLabelCnt;
+  console.log(measureDataLabelCnt);
+  console.log(measurementCnt);
+  newCancelLabel.appendChild(newCancelElement);
+  newCancelElement.addEventListener('click', (e)=>{
+    const $this = e.target;
+    cancelVal = $this.dataset.cancelTrriger;
+    if (window.confirm('この測定点を削除しますか？')){
+      cancelMeasurement(cancelVal);
+      console.log('キャンセルします');
+    } else {
+      console.log('キャンセルしません！！！');
+    }            
+  });
+}
+
+//⑦ポップアップdelete
+const popUpdeleat = () => {
+  $popUp[0].style.display = 'none';
+  $popLabel[1].style.display = 'none';
+}
+
+//⑧測定結果を動かすための関数
+const move =(e) =>{
+  let rect = e.target.getBoundingClientRect() ;
+  x = e.clientX - rect.left;
+  y = e.clientY - rect.top;
+  // measureDataMove();
+  $measure[targetVal].style.left = x+'px';
+  $measure[targetVal].style.top = y+'px';
+  let tempPosition = positionInfo[targetVal].trim().split(" ");
+  positionInfo[targetVal] = `${tempPosition[0]} ${tempPosition[1]} ${tempPosition[2]} ${tempPosition[3]} ${x} ${y}`;
+  canDraw(positionInfo);
+};
+
+//⑨キャンセルが実行されると配列の要素をからにする
+const cancelMeasurement =(cancelVal)=>{
+  positionInfo[cancelVal] = "";
+  $measure[cancelVal].style.display = 'none';
+  canDraw(positionInfo);
+};
+
+
+//関数定義終わり******************************************************************************************************************:
 
 //キャンバス上をクリックすると発生するイベント
 $can.addEventListener('click', (e) => {
@@ -208,20 +308,55 @@ $can.addEventListener('click', (e) => {
       //何もしない
       break;
     case 1:
-      clickCnt++; //〇〇回目として情報を残しておく
-      const position = makeCanCordinate (e);
-      if (clickCnt % 2 ===0) {
-        positionInfo[positionInfo.length-1] = `${positionInfo[positionInfo.length-1]} ${position}`;
-      } else {
-        positionInfo.push(position);
+      switch (measureTrriger){
+        case 0:
+          //何もしない
+          break;
+        case 1:
+          clickCnt++; //〇〇回目として情報を残しておく
+          const position = makeCanCordinate (e);
+          if (clickCnt % 2 ===0) {
+            positionInfo[positionInfo.length-1] = `${positionInfo[positionInfo.length-1]} ${position}`;
+            $MeasureTrriger[0].classList.remove(ACTIVATE_);
+            measureTrriger = 0;
+            measureDataSet(positionInfo[positionInfo.length-1]);
+          } else {
+            positionInfo.push(position);
+          }
+          canDraw(positionInfo);
+          console.log(positionInfo);
+          break;
+        default:
+          break;
       }
-      canDraw(positionInfo);
-      console.log(positionInfo);
       break;
     default:
       break;
   }
 });
+
+//測定ラベルがクリックされた際にイベント発生
+$MeasureTrriger[0].addEventListener('click', (e) =>{
+  $MeasureTrriger[0].classList.add(ACTIVATE_);
+  measureTrriger =1;
+  $popUp[0].style.display = 'block';
+  $popLabel[1].style.display = 'block';
+  let newLabel = document.getElementById('dnd');
+  let newElement = document.createElement('label');
+  newElement.className = 'MeasureLabel';
+  newElement.innerText = '測定結果'+ measureDataLabelCnt+'\nX\nY\nL';
+  newElement.dataset.measure = measureDataLabelCnt;
+  newLabel.appendChild(newElement);
+  newElement.addEventListener('mousedown', (e)=>{
+    const $this = e.target;
+    targetVal = $this.dataset.measure;
+    $can.addEventListener('mousemove',move);
+  });
+  newElement.addEventListener('mouseup', ()=>{
+    $can.removeEventListener('mousemove',move);
+  });
+})
+
 
 
 
