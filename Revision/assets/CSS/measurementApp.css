@@ -146,7 +146,7 @@
 
 }
 
-.Measure_label{
+.MeasureLabel{
     position: absolute;
     background-color: rgb(106, 243, 88);
     border-radius: 7px;
@@ -157,7 +157,7 @@
     display: none;
     width: 113px;
 }
-.cancel_trriger{
+.cancelTrriger{
     position: absolute;
     background-color: rgb(255, 0, 0);
     color: #fff;
