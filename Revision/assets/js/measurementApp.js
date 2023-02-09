@@ -19,6 +19,7 @@ const $canLabel =$doc.getElementsByClassName('canvasLabel');
 //クリックイベントの情報を残しておく関数
 let clickCnt = 0; //クリックの回数をカウント（偶数回の時にcanvasへのdrawをする)
 let positionInfo = []; //文字列として各測定点を格納する ("xStart yStart xEnd yEnd");
+let initPositionInfo =[];
 
 
 //*初期設定、測定トリガー用******************
@@ -26,12 +27,12 @@ const ACTIVATE_='is-active';
 let measureTrriger = 0;
 let measureDataLabelCnt = 0;
 // let measure_trriger = 0;
-// let init_setting = 0;
+let initSetting = 0;
 // let init_click_index = 0;
-// let init_direction='null';
-// let init_value_;
-// let init_prevent_index = 0;
-// let lean = 0;
+let initDirection='null';
+let initValue;
+let initPreventIndex = 0;
+let lean = 0;
 //*************************** */
 //測定結果格納用//
 const $measure = document.getElementsByClassName('MeasureLabel');
@@ -52,6 +53,8 @@ const ballRadius = 4;
 let measureLineColor = "#ff0000"; //測定線のカラーを選択
 let measurePointCircle = "#ff0000"; //測定点のカラーを選択
 let lineWidth = 3; //線の太さ
+let initMeasureLineColor = "#00fbff";
+let initPointCircle = "#00fbff";
 //*******************************↑↑↑↑↑ */
 //***測定結果を書くための変数/定数 */
 let targetVal = 100;
@@ -84,6 +87,7 @@ window.onresize = fitCanvasSize;
 //⑥キャンセルボタンを作る
 //⑦ポップアップdelete
 //⑧測定結果を動かすための関数
+//⑨キャンセルが実行されると配列の要素をからにする
 
 //************対象の画像をキャンバス上にセッティングする **************************/
 //ドラッグ’ドロップのコード
@@ -175,38 +179,49 @@ const canDraw = window.onload = (arrayData) => {
         if (clickCnt % 2 !==0){
           lineNum += -1;
         }
+        let lineColor ="";
+        let circlePoint="";
+        if (initSetting===1){
+          lineColor=initMeasureLineColor;
+          circlePoint=initPointCircle;
+        } else {
+          lineColor=measureLineColor;
+          circlePoint=measurePointCircle;
+        }
+        
         for (let index = 0 ;index < lineNum ; index++){ //上から「①線を引く②開始点/終了点に点を設定③測定ラベルまでの直線を表現」
           if (arrayData[index] ==="") { //もしも情報が空なら何も操作をしない
             //何もしない
-          } else {
+          } else { 
             const tempPosition = arrayData[index].trim().split(" ")
             $ctx.beginPath () ;
             $ctx.moveTo( parseInt(tempPosition[0])-ballRadius/2, parseInt(tempPosition[1])-ballRadius/2) ;
             $ctx.lineTo( parseInt(tempPosition[2]-ballRadius/2), parseInt(tempPosition[3])-ballRadius/2) ;
-            $ctx.strokeStyle = measureLineColor ;
+            $ctx.strokeStyle = lineColor ;
             $ctx.lineWidth = lineWidth ;
             $ctx.stroke();
-            
-            $ctx.beginPath () ;
-            $ctx.moveTo( (parseInt(tempPosition[0])+parseInt(tempPosition[2]))/2, (parseInt(tempPosition[1])+parseInt(tempPosition[3]))/2 ) ;
-            switch (tempPosition.length){
-              case 4:
-                $ctx.lineTo( (parseInt(tempPosition[0])+parseInt(tempPosition[2]))/2-30, (parseInt(tempPosition[1])+parseInt(tempPosition[3]))/2-60 ) ;
-                break;
-              case 6:
-                $ctx.lineTo( parseInt(tempPosition[4]), (parseInt(tempPosition[5]))) ;
-                break;
+            if (initSetting !==1){
+              $ctx.beginPath () ;
+              $ctx.moveTo( (parseInt(tempPosition[0])+parseInt(tempPosition[2]))/2, (parseInt(tempPosition[1])+parseInt(tempPosition[3]))/2 ) ;
+              switch (tempPosition.length){
+                case 4:
+                  $ctx.lineTo( (parseInt(tempPosition[0])+parseInt(tempPosition[2]))/2-30, (parseInt(tempPosition[1])+parseInt(tempPosition[3]))/2-60 ) ;
+                  break;
+                case 6:
+                  $ctx.lineTo( parseInt(tempPosition[4]), (parseInt(tempPosition[5]))) ;
+                  break;
                 default:
                   break;
+              }
+              $ctx.strokeStyle = lineColor ;
+              $ctx.lineWidth = Math.floor(lineWidth/5)+1 ;
+              $ctx.stroke() ;
             }
-            $ctx.strokeStyle = measureLineColor ;
-            $ctx.lineWidth = Math.floor(lineWidth/5)+1 ;
-            $ctx.stroke() ;
-            
+                  
             $ctx.beginPath();
             $ctx.arc(parseInt(tempPosition[0])-ballRadius/2, parseInt(tempPosition[1])-ballRadius/2, ballRadius, 0, Math.PI*2);
             $ctx.arc(parseInt(tempPosition[2])-ballRadius/2, parseInt(tempPosition[3])-ballRadius/2, ballRadius, 0, Math.PI*2);
-            $ctx.fillStyle = measurePointCircle;
+            $ctx.fillStyle = circlePoint;
             $ctx.fill();
             $ctx.closePath();
           }
@@ -215,12 +230,15 @@ const canDraw = window.onload = (arrayData) => {
           const tempPosition = arrayData[lineNum].trim().split(" ")
           $ctx.beginPath();
           $ctx.arc(parseInt(tempPosition[0])-ballRadius/2, parseInt(tempPosition[1])-ballRadius/2, ballRadius, 0, Math.PI*2);
-          $ctx.fillStyle = measurePointCircle;
+          $ctx.fillStyle = circlePoint;
           $ctx.fill();
           $ctx.closePath();
         }
-        // }
+        if (clickCnt % 2 ===0){
+          initSetting = 0;
+        }
       }
+
       break;
   }
 }
@@ -231,8 +249,8 @@ const canDraw = window.onload = (arrayData) => {
  */
 const measureDataSet = (str)=>{
   const tempInfo = str.trim().split(" ");
-  const x = parseInt(tempInfo[2])-parseInt(tempInfo[0]);
-  const y = parseInt(tempInfo[3])-parseInt(tempInfo[1]);
+  const x = (parseInt(tempInfo[2])-parseInt(tempInfo[0]))/lean;
+  const y = (parseInt(tempInfo[3])-parseInt(tempInfo[1]))/lean;
   const L = ((x**2+y**2)**(1/2)).toFixed(2);
   $measure[measurementCnt].style.display = 'block';
   $measure[measurementCnt].style.left = ((parseInt(tempInfo[2])+parseInt(tempInfo[0]))/2-30)+'px';
@@ -275,7 +293,11 @@ const measureCancelLabelMake = () => {
 //⑦ポップアップdelete
 const popUpdeleat = () => {
   $popUp[0].style.display = 'none';
-  $popLabel[1].style.display = 'none';
+  if(initSetting===1){
+    $popLabel[0].style.display = 'none';
+  } else {
+    $popLabel[1].style.display = 'none';
+  }
 }
 
 //⑧測定結果を動かすための関数
@@ -298,6 +320,51 @@ const cancelMeasurement =(cancelVal)=>{
   canDraw(positionInfo);
 };
 
+//⑩初期設定のポップアップ
+const PopUpchange = (e)=>{
+  const $this = e.target;
+  SetVal = $this.dataset.setbutton;
+  console.log('SetVal->',SetVal);
+  // console.log('$set_dir[0]->',$set_dir[0]);
+  if (parseInt(SetVal,10) ===0){
+    if ($setDir[0].value === 'null'){
+      window.alert('基準の方向を指定してください');
+    } else if (parseInt($initVal.value,10) === 0){
+      window.alert('基準寸法を入力してください');
+    } else {
+    initDirection=$setDir[0].value;
+    initValue=$initVal.value;
+    initMeasure();
+    };  
+  } else {
+    initSetting =0;
+    $popUp[0].style.display = 'none';
+    $initSet[0].classList.remove(ACTIVATE_);
+  };
+};
+
+//⑪初期値を測定するポップアップ
+const initMeasure = () =>{
+  $initLabel[0].style.display = 'none';
+  $popLabel[0].style.display = 'block';
+  initPreventIndex =0;
+};
+
+//⑫係数を求めるための関数
+const checkLean = (array) => {
+  let tempLetter = array[0];
+  let tempArray = tempLetter.trim().split(" ");
+  console.log(initDirection);
+  if (initDirection ==="x"){
+    lean = Math.abs(parseInt(tempArray[2])-parseInt(tempArray[0]))/initValue;
+  } else if (initDirection==="y"){
+    lean = Math.abs(parseInt(tempArray[3])-parseInt(tempArray[1]))/initValue;
+  } else if (initDirection==="Length"){
+    lean = ((parseInt(tempArray[2])-parseInt(tempArray[0]))**2+(parseInt(tempArray[3])-parseInt(tempArray[1]))**2)**(1/2)/initValue;
+  }
+  console.log(lean);
+}
+
 
 //関数定義終わり******************************************************************************************************************:
 
@@ -308,23 +375,46 @@ $can.addEventListener('click', (e) => {
       //何もしない
       break;
     case 1:
-      switch (measureTrriger){
-        case 0:
-          //何もしない
-          break;
+      switch (initSetting){
         case 1:
-          clickCnt++; //〇〇回目として情報を残しておく
-          const position = makeCanCordinate (e);
+          clickCnt++;
+          let tempPosi = makeCanCordinate (e);
           if (clickCnt % 2 ===0) {
-            positionInfo[positionInfo.length-1] = `${positionInfo[positionInfo.length-1]} ${position}`;
-            $MeasureTrriger[0].classList.remove(ACTIVATE_);
-            measureTrriger = 0;
-            measureDataSet(positionInfo[positionInfo.length-1]);
+            initPositionInfo[0] = `${initPositionInfo[0]} ${tempPosi}`;
+            $initSet[0].classList.remove(ACTIVATE_);
+            popUpdeleat();
+            checkLean(initPositionInfo);
+            // initSetting = 0;
+            // measureDataSet(initPositionInfo[initPositionInfo.length-1]);
           } else {
-            positionInfo.push(position);
+            initPositionInfo[0]=tempPosi;
           }
-          canDraw(positionInfo);
-          console.log(positionInfo);
+          canDraw(initPositionInfo);
+          
+          console.log(initPositionInfo);
+          break;
+        case 0:
+          switch (measureTrriger){
+            case 0:
+              //何もしない
+              break;
+            case 1:
+              clickCnt++; //〇〇回目として情報を残しておく
+              const position = makeCanCordinate (e);
+              if (clickCnt % 2 ===0) {
+                positionInfo[positionInfo.length-1] = `${positionInfo[positionInfo.length-1]} ${position}`;
+                $MeasureTrriger[0].classList.remove(ACTIVATE_);
+                measureTrriger = 0;
+                measureDataSet(positionInfo[positionInfo.length-1]);
+              } else {
+                positionInfo.push(position);
+              }
+              canDraw(positionInfo);
+              console.log(positionInfo);
+              break;
+            default:
+              break;
+          }
           break;
         default:
           break;
@@ -355,6 +445,29 @@ $MeasureTrriger[0].addEventListener('click', (e) =>{
   newElement.addEventListener('mouseup', ()=>{
     $can.removeEventListener('mousemove',move);
   });
+})
+
+$initSet[0].addEventListener('click', (e)=>{
+  $initSet[0].classList.add(ACTIVATE_);
+  $popUp[0].style.display = 'block';
+  $initLabel[0].style.display = 'block';
+  initSetting =1;
+  initPreventIndex =1;
+  let cnt=0;
+  while(cnt < $SetButton.length){
+    $SetButton[cnt].addEventListener('click',(e)=>PopUpchange(e));
+    cnt++;
+  }  
+})
+
+$clear[0].addEventListener('click', (e)=>{
+  for (let cnt = 0; cnt < positionInfo.length ; cnt++){
+    positionInfo[cnt]="";
+  }
+  canDraw(positionInfo);
+  for (let cnt =0 ; cnt < $measure.length ; cnt++){
+    $measure[cnt].style.display = 'none';
+  }
 })
 
 
